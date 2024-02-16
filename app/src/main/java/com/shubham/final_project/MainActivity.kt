@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -67,11 +68,13 @@ fun Navigation(context: Context) {
     lateinit var executor: Executor
     val poseResult = poseDetector.getPoseResult()
     executor = Executors.newSingleThreadExecutor()
+
+
     NavHost(navController = navController, startDestination = "PoseScreen") {
-        composable("mainScreen") {
-            // This is the main screen
-            MyAppContent(navController)
-        }
+//        composable("mainScreen") {
+//            // This is the main screen
+//            MyAppContent(navController)
+//        }
         composable("PoseScreen") {
             // This is the camera preview screen
             PoseDetectionScreen(poseLandmarker, executor,poseResult)
@@ -79,28 +82,39 @@ fun Navigation(context: Context) {
     }
 }
 @Composable
-fun PoseDetectionScreen(poseLandmarker: PoseLandmarker, executor: Executor, poseResult: MutableState<PoseDetector.ResultBundle?>) {
-
+fun PoseDetectionScreen(
+    poseLandmarker: PoseLandmarker,
+    executor: Executor,
+    poseResult: MutableState<PoseDetector.ResultBundle?>
+) {
     PoseDetectionPreview(poseLandmarker, executor, poseResult)
-}
 
-@OptIn(ExperimentalComposeUiApi::class)
-@Composable
-fun MyAppContent(navController: NavController) {
-    CreateHeader()
-    AshanName(navController)
-}
-
-@ExperimentalComposeUiApi
-@Composable
-fun AshanName(navController: NavController) {
-    inputEnd(
-        navigateToCamera = { navController.navigate("PoseScreen") }
-    ) { asnName, timeData ->
-        Log.d("Name", "Aasan Name: $asnName")
-        Log.d("Time", "Time Data: $timeData")
+    DisposableEffect(Unit) {
+        onDispose {
+            // Clean up resources here, e.g., release the camera
+            poseLandmarker.close()
+            // Additional cleanup if needed
+        }
     }
 }
+
+//@OptIn(ExperimentalComposeUiApi::class)
+//@Composable
+//fun MyAppContent(navController: NavController) {
+//    CreateHeader()
+//    AshanName(navController)
+//}
+
+//@ExperimentalComposeUiApi
+//@Composable
+//fun AshanName(navController: NavController) {
+//    inputEnd(
+//        navigateToCamera = { navController.navigate("PoseScreen") }
+//    ) { asnName, timeData ->
+//        Log.d("Name", "Aasan Name: $asnName")
+//        Log.d("Time", "Time Data: $timeData")
+//    }
+//}
 
 
 @ExperimentalComposeUiApi

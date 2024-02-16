@@ -14,13 +14,10 @@ import androidx.camera.core.ImageProxy
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -31,7 +28,6 @@ import androidx.core.content.ContextCompat
 import com.google.mediapipe.framework.image.BitmapImageBuilder
 import com.google.mediapipe.framework.image.MPImage
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
-import kotlinx.coroutines.delay
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.Executor
 import kotlin.math.max
@@ -50,12 +46,13 @@ fun PoseDetectionPreview(
 
     AndroidView(
         modifier = modifier.fillMaxSize(),
-        factory = { context ->
+        factory = {
             val view = PreviewView(context)
             view
 
         },
         update = { previewView ->
+            val cameraProvider1 = ProcessCameraProvider.getInstance(context)
             val imageAnalyzer = ImageAnalysis.Builder()
                 .build()
                 .also {
@@ -68,11 +65,12 @@ fun PoseDetectionPreview(
 
                 }
 
-            val cameraProvider = ProcessCameraProvider.getInstance(context)
-            cameraProvider.addListener(
+
+
+            cameraProvider1.addListener(
                 {
                     val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-                    val cameraProvider = cameraProvider.get()
+                    val cameraProvider = cameraProvider1.get()
                     cameraProvider.bindToLifecycle(
                         lifecycleOwner,
                         cameraSelector,
@@ -93,50 +91,24 @@ fun PoseDetectionPreview(
 
 @Composable
 private fun DrawPosesOnPreview(resultBundleState: MutableState<PoseDetector.ResultBundle?>) {
-    val resultBundle = resultBundleState.value
-
-    if (resultBundle != null) {
-
-
-        // Create an Animatable to control the progress of drawing circles
-        val drawProgress = remember { Animatable(initialValue = 0f) }
-
-        // Launch a coroutine to increment the draw progress over time
-        LaunchedEffect(Unit) {
-            while (drawProgress.value < 1f) {
-                delay(100) // Adjust the delay duration as needed
-                drawProgress.animateTo(drawProgress.value + 0.1f) // Adjust the step size as needed
-            }
-        }
-
-        // Draw circles on the canvas based on the draw progress
-        Canvas(modifier = Modifier.fillMaxSize()) {
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        val resultBundle = resultBundleState.value
+        if (resultBundle != null) {
             val scale = max(size.width * 1f / resultBundle.inputImageWidth, size.height * 1f / resultBundle.inputImageHeight)
-            resultBundle.results.forEachIndexed { resultIndex, result ->
-                result.landmarks().forEachIndexed { landmarkIndex, poseLandmarks ->
-                    val progress = calculateCircleProgress(resultIndex, landmarkIndex)
-                    if (progress <= drawProgress.value) {
-                        poseLandmarks.forEach { landmark ->
-                            drawCircle(
-                                color = Color.Yellow,
-                                radius = 10F,
-                                center = Offset(landmark.x() * scale * resultBundle.inputImageWidth, landmark.y() * scale * resultBundle.inputImageHeight)
-                            )
-                        }
+            resultBundle.results.forEach { result ->
+                result.landmarks().forEach { poseLandmarks ->
+                    poseLandmarks.forEach { landmark ->
+                        drawCircle(
+                            color = Color.Yellow,
+                            radius = 10F,
+                            center = Offset(landmark.x() * scale*resultBundle.inputImageWidth, landmark.y() * scale*resultBundle.inputImageHeight)
+                        )
                     }
                 }
             }
         }
     }
 }
-
-// Function to calculate the progress of drawing a circle
-private fun calculateCircleProgress(resultIndex: Int, landmarkIndex: Int): Float {
-    // Adjust this calculation based on your preference for drawing circles
-    return (resultIndex + 1) * 0.1f + landmarkIndex * 0.01f
-}
-
-
 
 
 private fun imageProxyToBitmap(imageProxy: ImageProxy): Bitmap {

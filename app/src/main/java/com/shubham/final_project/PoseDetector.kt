@@ -9,17 +9,11 @@ import com.google.mediapipe.tasks.core.BaseOptions
 import com.google.mediapipe.tasks.vision.core.RunningMode
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarker
 import com.google.mediapipe.tasks.vision.poselandmarker.PoseLandmarkerResult
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.util.concurrent.Executor
 
 
 class PoseDetector(private val context: Context) {
     private val poseResult = mutableStateOf<ResultBundle?>(null)
     private val poseLandmarkerHelperListener=MyLandmarkerListener()
-    private lateinit var poseLandmarker: PoseLandmarker
     fun initializePoseLandmarker(): PoseLandmarker {
         val modelName = "pose_landmarker_lite.task"
         val baseOptionsBuilder = BaseOptions.builder().setModelAssetPath(modelName)
